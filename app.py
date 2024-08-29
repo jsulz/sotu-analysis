@@ -122,7 +122,7 @@ with gr.Blocks() as demo:
                 trigrams_df,
                 x="counts",
                 y="trigrams",
-                title=f"Top {n_grams}-grams",
+                title=f"{potus}'s top {n_grams}-grams",
                 orientation="h",
                 height=400,
             )
@@ -152,18 +152,14 @@ with gr.Blocks() as demo:
                 secondary_y=True,
             )
             # Add figure title
-            fig5.update_layout(title_text="Double Y Axis Example")
+            fig5.update_layout(title_text="Address Word Count and ARI")
 
             # Set x-axis title
-            fig5.update_xaxes(title_text="xaxis title")
+            fig5.update_xaxes(title_text="Date of Address")
 
             # Set y-axes titles
-            fig5.update_yaxes(
-                title_text="<b>primary</b> yaxis title", secondary_y=False
-            )
-            fig5.update_yaxes(
-                title_text="<b>secondary</b> yaxis title", secondary_y=True
-            )
+            fig5.update_yaxes(title_text="Word Count", secondary_y=False)
+            fig5.update_yaxes(title_text="ARI", secondary_y=True)
             return fig5
 
     # calculate the total number of words in the speech_html column and add it to a new column
