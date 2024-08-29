@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "sotu-analysis"
+version = "0.1.0"
+description = ""
+authors = ["jsulz <j.sulzdorf@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+gradio = "^4.42.0"
+datasets = "^2.21.0"
+pandas = "^2.2.2"
+nltk = "^3.9.1"
+plotly = "^5.23.0"
+matplotlib = "^3.9.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
