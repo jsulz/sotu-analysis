@@ -147,7 +147,7 @@ with gr.Blocks() as demo:
                         orientation="h",
                     )
                     print(fig)
-                    gr.Plot(value=fig, container=True)
+                    gr.Plot(value=fig, container=True, visible=True)
 
 
-demo.launch()
+demo.launch(share=True)
