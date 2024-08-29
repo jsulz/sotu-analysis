@@ -11,6 +11,7 @@ sotu_dataset = "jsulz/state-of-the-union-addresses"
 dataset = load_dataset(sotu_dataset)
 df = dataset["train"].to_pandas()
 # decode the tokens-nostop column from a byte array to a list of string
+"""
 df["tokens-nostop"] = df["tokens-nostop"].apply(
     lambda x: x.decode("utf-8")
     .replace('"', "")
@@ -18,6 +19,7 @@ df["tokens-nostop"] = df["tokens-nostop"].apply(
     .replace("]", "")
     .split(",")
 )
+"""
 df["word_count"] = df["speech_html"].apply(lambda x: len(x.split()))
 # calculate the automated readibility index reading ease score for each address
 # automated readability index = 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43
@@ -101,40 +103,51 @@ with gr.Blocks() as demo:
                 )
 
     with gr.Row():
+        with gr.Column():
 
-        @gr.render(inputs=[president, grams])
-        def ngram_bar(potus, n_grams):
-            if potus != "All" and potus is not None:
-                if type(n_grams) is not int:
-                    n_grams = 1
-                print(n_grams)
-                # create a Counter object from the trigrams
-                potus_df = df[df["potus"] == potus]
-                # decode the tokens-nostop column from a byte array to a list of string
-                trigrams = (
-                    potus_df["tokens-nostop"]
-                    .apply(lambda x: list(ngrams(x, n_grams)))
-                    .apply(Counter)
-                    .sum()
-                )
-                # get the most common trigrams
-                common_trigrams = trigrams.most_common(20)
-                # unzip the list of tuples and plot the trigrams and counts as a bar chart
-                trigrams, counts = zip(*common_trigrams)
-                # join the trigrams into a single string
-                trigrams = [" ".join(trigram) for trigram in trigrams]
-                # create a dataframe from the trigrams and counts
-                trigrams_df = pd.DataFrame({"trigrams": trigrams, "counts": counts})
-                # plot the trigrams and counts as a bar chart from matplotlib
-                fig, ax = plt.subplots(figsize=(12, 4))
-                ax.barh(trigrams_df["trigrams"], trigrams_df["counts"])
-                ax.set_title("Top 20 Trigrams")
-                ax.set_ylabel("Count")
-                ax.set_xlabel("Trigrams")
-                plt.xticks(rotation=45)
-                # make it tight layout
-                plt.tight_layout()
-                gr.Plot(value=fig, container=True)
+            @gr.render(inputs=[president, grams])
+            def ngram_bar(potus, n_grams):
+                if potus != "All" and potus is not None:
+                    if type(n_grams) is not int:
+                        n_grams = 1
+                    print(n_grams)
+                    # create a Counter object from the trigrams
+                    potus_df = df[df["potus"] == potus]
+                    # decode the tokens-nostop column from a byte array to a list of string
+                    trigrams = (
+                        potus_df["tokens-nostop"]
+                        .apply(lambda x: list(ngrams(x, n_grams)))
+                        .apply(Counter)
+                        .sum()
+                    )
+                    # get the most common trigrams
+                    common_trigrams = trigrams.most_common(20)
+                    # unzip the list of tuples and plot the trigrams and counts as a bar chart
+                    trigrams, counts = zip(*common_trigrams)
+                    # join the trigrams into a single string
+                    trigrams = [" ".join(trigram) for trigram in trigrams]
+                    # create a dataframe from the trigrams and counts
+                    trigrams_df = pd.DataFrame({"trigrams": trigrams, "counts": counts})
+                    # plot the trigrams and counts as a bar chart from matplotlib
+                    """
+                    fig, ax = plt.subplots(figsize=(12, 4))
+                    ax.barh(trigrams_df["trigrams"], trigrams_df["counts"])
+                    ax.set_title("Top 20 Trigrams")
+                    ax.set_ylabel("Count")
+                    ax.set_xlabel("Trigrams")
+                    plt.xticks(rotation=45)
+                    # make it tight layout
+                    plt.tight_layout()
+                    """
+                    fig = px.scatter(
+                        trigrams_df,
+                        x="counts",
+                        y="trigrams",
+                        title="Top 20 Trigrams",
+                        orientation="h",
+                    )
+                    print(fig)
+                    gr.Plot(value=fig, container=True)
 
 
 demo.launch()
