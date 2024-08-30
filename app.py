@@ -120,7 +120,7 @@ with gr.Blocks() as demo:
     gr.Markdown(
         """
         # A Dashboard to Analyze the State of the Union Addresses
-        This dashboard provides an analysis of all State of the Union (SOTU) addresses from 1790 to 2020 including written and spoken addresses. The data is sourced from the [State of the Union Addresses dataset](https://huggingface.co/jsulz/state-of-the-union-addresses) on the Hugging Face Datasets Hub. You can read more about how the data was gathered and cleaned on the dataset card. To read the speeches, you can visit the [The American Presidency Project's State of the Union page](https://www.presidency.ucsb.edu/documents/presidential-documents-archive-guidebook/annual-messages-congress-the-state-the-union) where this data was sourced.
+        This dashboard provides an analysis of all State of the Union (SOTU) addresses from 1790 to 2020 including written and spoken addresses. The data is sourced from the [State of the Union Addresses dataset](https://huggingface.co/datasets/jsulz/state-of-the-union-addresses) on the Hugging Face Datasets Hub. You can read more about how the data was gathered and cleaned on the dataset card. To read the speeches, you can visit the [The American Presidency Project's State of the Union page](https://www.presidency.ucsb.edu/documents/presidential-documents-archive-guidebook/annual-messages-congress-the-state-the-union) where this data was sourced.
         """
     )
     # Basic line chart showing the total number of words in each address
