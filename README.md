@@ -8,8 +8,9 @@ sdk_version: 4.42.0
 app_file: app.py
 pinned: false
 license: mit
-short_description: A dashboard for all U.S. State of the Unions.
-datasets: jsulz/state-of-the-union-addresses
+short_description: A data dashboard for all U.S. State of the Unions.
+datasets:
+  - jsulz/state-of-the-union-addresses
 ---
 
 # State of the Union Analysis
