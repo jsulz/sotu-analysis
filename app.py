@@ -206,7 +206,7 @@ with gr.Blocks() as demo:
 
             Use the dropdown to select a president a go a little deeper. 
             
-            To begin with, there is an [n-gram](https://en.wikipedia.org/wiki/N-gram) bar chart built from all of the given president's addresses. An n-gram is a contiguous sequence of n items from a given sample of text or speech. Because written and spoken speech is littered with so-called "stop words" such as "and", "the", and "but", we've removed these from the text. 
+            To begin with, there is an [n-gram](https://en.wikipedia.org/wiki/N-gram) bar chart built from all of the given president's addresses. An n-gram is a contiguous sequence of n items from a given sample of text or speech. Because written and spoken speech is littered with so-called "stop words" such as "and", "the", and "but", they've been removed to provide a more rich (albeit sometimes more difficult to read) view of the text. 
             
             The slider only goes up to 4-grams because the data is sparse beyond that. I personally found the n-grams from our last three presidents to be less than inspiring and full of platitudes. Earlier presidents have more interesting n-grams.
 
