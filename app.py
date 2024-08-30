@@ -131,6 +131,8 @@ with gr.Blocks() as demo:
                     The line chart to the right shows the total number of words in each address. However, not all SOTUs are created equally. From 1801 to 1916, each address was a written message to Congress. In 1913, Woodrow Wilson broke with tradition and delivered his address in person. Since then, the addresses have been a mix of written and spoken (mostly spoken). 
 
                     The spikes you see in the early 1970's and early 1980's are from written addresses by Richard Nixon and Jimmy Carter respectively.
+
+                    Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
                     """
         )
         fig1 = px.line(
@@ -168,11 +170,6 @@ with gr.Blocks() as demo:
             tickangle=0,  # Default label angle (horizontal)
         ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    )
-    gr.Markdown(
-        """
-            Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
-    """
     )
     gr.Plot(fig2)
 
