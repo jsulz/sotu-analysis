@@ -14,22 +14,22 @@ def load_transform_dataset():
     # Load the dataset and convert it to a Pandas dataframe
     sotu_dataset = "jsulz/state-of-the-union-addresses"
     dataset = load_dataset(sotu_dataset)
-    df = dataset["train"].to_pandas()
+    _df = dataset["train"].to_pandas()
     # Do some on-the-fly calculations
     # calcualte the number of words in each address
-    df["word_count"] = df["speech_html"].apply(lambda x: len(x.split()))
+    _df["word_count"] = _df["speech_html"].apply(lambda x: len(x.split()))
     # calculate the automated readibility index reading ease score for each address
     # automated readability index = 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43
-    df["ari"] = df["no-contractions"].apply(
+    _df["ari"] = _df["no-contractions"].apply(
         lambda x: (4.71 * (len(x.replace(" ", "")) / len(x.split())))
         + (0.5 * (len(x.split()) / len(x.split("."))))
         - 21.43
     )
     # Sort the dataframe by date because Plotly doesn't do any of this automatically
-    df = df.sort_values(by="date")
-    written = df[df["categories"] == "Written"]
-    spoken = df[df["categories"] == "Spoken"]
-    return df, written, spoken
+    _df = _df.sort_values(by="date")
+    _written = _df[_df["categories"] == "Written"]
+    _spoken = _df[_df["categories"] == "Spoken"]
+    return _df, _written, _spoken
 
 
 """
@@ -234,6 +234,7 @@ with gr.Blocks() as demo:
         minimum=1, maximum=4, step=1, label="N-grams", interactive=True, value=1
     )
 
+    # store the dataframe in a state object before passing to plots
     df_state = gr.State(df)
 
     # show a bar chart of the top n-grams for a selected president
