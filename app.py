@@ -9,34 +9,46 @@ from plotly.subplots import make_subplots
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-# Load the dataset and convert it to a Pandas dataframe
-sotu_dataset = "jsulz/state-of-the-union-addresses"
-dataset = load_dataset(sotu_dataset)
-df = dataset["train"].to_pandas()
-# Do some on-the-fly calculations
-# calcualte the number of words in each address
-df["word_count"] = df["speech_html"].apply(lambda x: len(x.split()))
-# calculate the automated readibility index reading ease score for each address
-# automated readability index = 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43
-df["ari"] = df["no-contractions"].apply(
-    lambda x: (4.71 * (len(x.replace(" ", "")) / len(x.split())))
-    + (0.5 * (len(x.split()) / len(x.split("."))))
-    - 21.43
-)
-# Sort the dataframe by date because Plotly doesn't do any of this automatically
-df = df.sort_values(by="date")
-written = df[df["categories"] == "Written"]
-spoken = df[df["categories"] == "Spoken"]
+
+def load_transform_dataset():
+    # Load the dataset and convert it to a Pandas dataframe
+    sotu_dataset = "jsulz/state-of-the-union-addresses"
+    dataset = load_dataset(sotu_dataset)
+    df = dataset["train"].to_pandas()
+    # Do some on-the-fly calculations
+    # calcualte the number of words in each address
+    df["word_count"] = df["speech_html"].apply(lambda x: len(x.split()))
+    # calculate the automated readibility index reading ease score for each address
+    # automated readability index = 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43
+    df["ari"] = df["no-contractions"].apply(
+        lambda x: (4.71 * (len(x.replace(" ", "")) / len(x.split())))
+        + (0.5 * (len(x.split()) / len(x.split("."))))
+        - 21.43
+    )
+    # Sort the dataframe by date because Plotly doesn't do any of this automatically
+    df = df.sort_values(by="date")
+    written = df[df["categories"] == "Written"]
+    spoken = df[df["categories"] == "Spoken"]
+    return df, written, spoken
+
 
 """
 Helper functions for Plotly charts
 """
 
 
-def plotly_ngrams(n_grams, potus):
-    if potus is not None:
+def filter_potus(potus, _df):
+    if potus != "All":
         # Filter on the potus
-        potus_df = df[df["potus"] == potus]
+        potus_df = _df[_df["potus"] == potus]
+    else:
+        potus_df = _df
+    return potus_df
+
+
+def plotly_ngrams(n_grams, potus, _df):
+    if potus is not None:
+        potus_df = filter_potus(potus, _df)
         # Create a counter generator for the n-grams
         trigrams = (
             potus_df["tokens-nostop"]
@@ -63,59 +75,58 @@ def plotly_ngrams(n_grams, potus):
         return fig4
 
 
-def plotly_word_and_ari(president):
-    if president != "All" and president is not None:
-        potus_df = df[df["potus"] == president]
-        fig5 = make_subplots(specs=[[{"secondary_y": True}]])
-        fig5.add_trace(
-            go.Scatter(
-                x=potus_df["date"],
-                y=potus_df["word_count"],
-                name="Word Count",
-            ),
-            secondary_y=False,
-        )
-        fig5.add_trace(
-            go.Scatter(
-                x=potus_df["date"],
-                y=potus_df["ari"],
-                name="ARI",
-            ),
-            secondary_y=True,
-        )
-        # Add figure title
-        fig5.update_layout(title_text="Address Word Count and ARI")
+def plotly_word_and_ari(president, _df):
+    potus_df = filter_potus(president, _df)
+    fig5 = make_subplots(specs=[[{"secondary_y": True}]])
+    fig5.add_trace(
+        go.Scatter(
+            x=potus_df["date"],
+            y=potus_df["word_count"],
+            name="Word Count",
+        ),
+        secondary_y=False,
+    )
+    fig5.add_trace(
+        go.Scatter(
+            x=potus_df["date"],
+            y=potus_df["ari"],
+            name="ARI",
+        ),
+        secondary_y=True,
+    )
+    # Add figure title
+    fig5.update_layout(title_text="Address Word Count and ARI")
 
-        # Set x-axis title
-        fig5.update_xaxes(title_text="Date of Address")
+    # Set x-axis title
+    fig5.update_xaxes(title_text="Date of Address")
 
-        # Set y-axes titles
-        fig5.update_yaxes(title_text="Word Count", secondary_y=False)
-        fig5.update_yaxes(title_text="ARI", secondary_y=True)
-        return fig5
+    # Set y-axes titles
+    fig5.update_yaxes(title_text="Word Count", secondary_y=False)
+    fig5.update_yaxes(title_text="ARI", secondary_y=True)
+    return fig5
 
 
-def plt_wordcloud(president):
-    if president != "All" and president is not None:
-        potus_df = df[df["potus"] == president]
-        lemmatized = potus_df["lemmatized"].apply(lambda x: " ".join(x))
-        # build a single string from lemmatized
-        lemmatized = " ".join(lemmatized)
-        # create a wordcloud from the lemmatized column of the dataframe
-        wordcloud = WordCloud(background_color="white", width=800, height=400).generate(
-            lemmatized
-        )
-        # create a matplotlib figure
-        fig6 = plt.figure(figsize=(8, 4))
-        # add the wordcloud to the figure
-        plt.tight_layout()
-        plt.imshow(wordcloud, interpolation="bilinear")
-        plt.axis("off")
-        return fig6
+def plt_wordcloud(president, _df):
+    potus_df = filter_potus(president, _df)
+    lemmatized = potus_df["lemmatized"].apply(lambda x: " ".join(x))
+    # build a single string from lemmatized
+    lemmatized = " ".join(lemmatized)
+    # create a wordcloud from the lemmatized column of the dataframe
+    wordcloud = WordCloud(background_color="white", width=800, height=400).generate(
+        lemmatized
+    )
+    # create a matplotlib figure
+    fig6 = plt.figure(figsize=(8, 4))
+    # add the wordcloud to the figure
+    plt.tight_layout()
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    return fig6
 
 
 # Create a Gradio interface with blocks
 with gr.Blocks() as demo:
+    df, written, spoken = load_transform_dataset()
     # Build out the top level static charts and content
     gr.Markdown(
         """
@@ -214,23 +225,24 @@ with gr.Blocks() as demo:
     )
     # get all unique president names
     presidents = df["potus"].unique()
-    # convert presidents to a list
     presidents = presidents.tolist()
+    presidents.append("All")
     # create a dropdown to select a president
-    president = gr.Dropdown(label="Select a President", choices=presidents)
+    president = gr.Dropdown(label="Select a President", choices=presidents, value="All")
     # create a slider for number of word grams
-    grams = gr.Slider(minimum=1, maximum=4, step=1, label="N-grams", interactive=True)
+    grams = gr.Slider(
+        minimum=1, maximum=4, step=1, label="N-grams", interactive=True, value=1
+    )
+
+    df_state = gr.State(df)
 
     # show a bar chart of the top n-grams for a selected president
-    if president != "All" and president is not None:
-        gr.Plot(plotly_ngrams, inputs=[grams, president])
+    gr.Plot(plotly_ngrams, inputs=[grams, president, df_state])
 
-    if president != "All" and president is not None:
-        gr.Plot(plt_wordcloud, scale=2, inputs=[president])
+    gr.Plot(plt_wordcloud, scale=2, inputs=[president, df_state])
 
     # show a line chart of word count and ARI for a selected president
-    if president != "All" and president is not None:
-        gr.Plot(plotly_word_and_ari, inputs=[president])
+    gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
 
 
-demo.launch(share=True)
+demo.launch()
