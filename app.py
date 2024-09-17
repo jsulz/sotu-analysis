@@ -1,4 +1,5 @@
 from collections import Counter
+import math
 import gradio as gr
 from datasets import load_dataset
 from nltk.util import ngrams
@@ -8,6 +9,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
+from huggingface_hub import InferenceClient
+import matplotlib
+
+matplotlib.use("agg")
 
 
 def load_transform_dataset():
@@ -24,6 +29,12 @@ def load_transform_dataset():
         lambda x: (4.71 * (len(x.replace(" ", "")) / len(x.split())))
         + (0.5 * (len(x.split()) / len(x.split("."))))
         - 21.43
+    )
+    # create a column that is the year the speach was given from the date column
+    _df["year"] = _df["date"].dt.year
+    # create a column that is a concatenation of the president's name, year, and category
+    _df["speech_key"] = (
+        _df["potus"] + " - " + _df["year"].astype(str) + " (" + _df["categories"] + ")"
     )
     # Sort the dataframe by date because Plotly doesn't do any of this automatically
     _df = _df.sort_values(by="date")
@@ -64,6 +75,8 @@ def plotly_ngrams(n_grams, potus, _df):
         trigrams = [" ".join(trigram) for trigram in trigrams]
         # create a dataframe from the trigrams and counts
         trigrams_df = pd.DataFrame({"trigrams": trigrams, "counts": counts})
+        if potus == "All":
+            potus = "All Presidents"
         fig4 = px.bar(
             trigrams_df,
             x="counts",
@@ -124,9 +137,34 @@ def plt_wordcloud(president, _df):
     return fig6
 
 
+def summarization(speech_key, _df):
+    client = InferenceClient(model="facebook/bart-large-cnn")
+    chunk_len = 4000
+    speech = _df[_df["speech_key"] == speech_key]["speech_html"].values[0]
+    sotu_chunks = int(math.ceil(len(speech) / chunk_len))
+    response = []
+    for chunk in range(1, sotu_chunks + 1):
+        if chunk * 4000 < len(speech):
+            chunk_text = speech[(chunk - 1) * chunk_len : chunk * chunk_len]
+        else:
+            chunk_text = speech[(chunk - 1) * chunk_len :]
+        try:
+            summarization_chunk = client.summarization(
+                chunk_text, parameters={"truncation": "do_not_truncate"}
+            )
+        except Exception as e:
+            print(e)
+        response.append(summarization_chunk.summary_text)
+
+    return "\n\n".join(response)
+
+
 # Create a Gradio interface with blocks
 with gr.Blocks() as demo:
     df, written, spoken = load_transform_dataset()
+    # store the dataframe in a state object before passing to component functions
+    df_state = gr.State(df)
+
     # Build out the top level static charts and content
     gr.Markdown(
         """
@@ -208,6 +246,16 @@ with gr.Blocks() as demo:
                    The drop off is quite noticeable, don't you think? ;) 
             """
         )
+    gr.Markdown("## Summarize a Speech")
+    speeches = df["speech_key"].unique()
+    speeches = speeches.tolist()
+    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
+    # create a dropdown to select a speech from a president
+    run_summarization = gr.Button(value="Summarize")
+    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
+    run_summarization.click(
+        summarization, inputs=[speech, df_state], outputs=[fin_speech]
+    )
     gr.Markdown(
         """
             ## Dive Deeper on Each President
@@ -227,15 +275,14 @@ with gr.Blocks() as demo:
     presidents = df["potus"].unique()
     presidents = presidents.tolist()
     presidents.append("All")
+
     # create a dropdown to select a president
     president = gr.Dropdown(label="Select a President", choices=presidents, value="All")
+    # create a text area to display the summarized speech
     # create a slider for number of word grams
     grams = gr.Slider(
         minimum=1, maximum=4, step=1, label="N-grams", interactive=True, value=1
     )
-
-    # store the dataframe in a state object before passing to plots
-    df_state = gr.State(df)
 
     # show a bar chart of the top n-grams for a selected president
     gr.Plot(plotly_ngrams, inputs=[grams, president, df_state])
