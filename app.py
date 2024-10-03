@@ -1,5 +1,6 @@
 from collections import Counter
 import math
+import os
 import gradio as gr
 from datasets import load_dataset
 from nltk.util import ngrams
@@ -159,6 +160,32 @@ def summarization(speech_key, _df):
     return "\n\n".join(response)
 
 
+def streaming(speech_key, _df):
+    client = InferenceClient(token=os.environ["HF_TOKEN"])
+    speech = _df[_df["speech_key"] == speech_key]["speech_html"].values[0]
+    potus = speech_key.split(" - ")[0]
+    messages = []
+    for message in client.chat_completion(
+        model="meta-llama/Llama-3.1-8B-Instruct",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a legal scholar speaking to a class.",
+            },
+            {
+                "role": "user",
+                "content": f"The following speech is a State of the Union address from {potus}. Summarize it: {speech}",
+            },
+        ],
+        max_tokens=1000,
+        stream=False,
+    ):
+        # yield message.choices[0].delta.content
+        print(message)
+        # messages.append(message.choices[0].delta.content)
+    return "".join(messages)
+
+
 # Create a Gradio interface with blocks
 with gr.Blocks() as demo:
     df, written, spoken = load_transform_dataset()
@@ -253,9 +280,7 @@ with gr.Blocks() as demo:
     # create a dropdown to select a speech from a president
     run_summarization = gr.Button(value="Summarize")
     fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
-    run_summarization.click(
-        summarization, inputs=[speech, df_state], outputs=[fin_speech]
-    )
+    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
     gr.Markdown(
         """
             ## Dive Deeper on Each President
