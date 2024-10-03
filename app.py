@@ -163,26 +163,26 @@ def summarization(speech_key, _df):
 def streaming(speech_key, _df):
     client = InferenceClient(token=os.environ["HF_TOKEN"])
     speech = _df[_df["speech_key"] == speech_key]["speech_html"].values[0]
-    potus = speech_key.split(" - ")[0]
+    speech_info = speech_key.split(" - ")
     messages = []
     for message in client.chat_completion(
-        model="meta-llama/Llama-3.1-8B-Instruct",
+        model="Qwen/Qwen2.5-72B-Instruct",
         messages=[
             {
                 "role": "system",
-                "content": "You are a legal scholar speaking to a class.",
+                "content": "You are a political scholar with a deep knowledge of State of the Union addresses. You are tasked with summarizing a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context.",
             },
             {
                 "role": "user",
-                "content": f"The following speech is a State of the Union address from {potus}. Summarize it: {speech}",
+                "content": f"The following speech is a State of the Union address from {speech_info[0]} on {speech_info[1]}. Summarize it: {speech}",
             },
         ],
-        max_tokens=1000,
-        stream=False,
+        max_tokens=700,
+        stream=True,
     ):
         # yield message.choices[0].delta.content
-        print(message)
-        # messages.append(message.choices[0].delta.content)
+        # print(message)
+        messages.append(message.choices[0].delta.content)
     return "".join(messages)
 
 
@@ -195,9 +195,13 @@ with gr.Blocks() as demo:
     # Build out the top level static charts and content
     gr.Markdown(
         """
-        # A Dashboard to Analyze the State of the Union Addresses
+        # An Interactive Dashboard for State of the Union Addresses
         This dashboard provides an analysis of all State of the Union (SOTU) addresses from 1790 to 2020 including written and spoken addresses. The data is sourced from the [State of the Union Addresses dataset](https://huggingface.co/datasets/jsulz/state-of-the-union-addresses) on the Hugging Face Datasets Hub. You can read more about how the data was gathered and cleaned on the dataset card. To read the speeches, you can visit the [The American Presidency Project's State of the Union page](https://www.presidency.ucsb.edu/documents/presidential-documents-archive-guidebook/annual-messages-congress-the-state-the-union) where this data was sourced.
         """
+    )
+
+    gr.Markdown(
+        "In addition to analyzing the content, this space also leverages the Qwen/2.5-72B-Instruct model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context."
     )
     # Basic line chart showing the total number of words in each address
     with gr.Row():
@@ -273,14 +277,6 @@ with gr.Blocks() as demo:
                    The drop off is quite noticeable, don't you think? ;) 
             """
         )
-    gr.Markdown("## Summarize a Speech")
-    speeches = df["speech_key"].unique()
-    speeches = speeches.tolist()
-    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
-    # create a dropdown to select a speech from a president
-    run_summarization = gr.Button(value="Summarize")
-    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
-    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
     gr.Markdown(
         """
             ## Dive Deeper on Each President
@@ -317,5 +313,19 @@ with gr.Blocks() as demo:
     # show a line chart of word count and ARI for a selected president
     gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
 
+    gr.Markdown("## Summarize a Speech")
+    gr.HTML("<div id=summarize-anchor></div>")
+    gr.Markdown(
+        """
+        Use the dropdown to select a speech from a president and click the button to summarize the speech. The model will provide a concise summary of the speech with the proper historical and political context.
+        """
+    )
+    speeches = df["speech_key"].unique()
+    speeches = speeches.tolist()
+    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
+    # create a dropdown to select a speech from a president
+    run_summarization = gr.Button(value="Summarize")
+    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
+    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
 
 demo.launch()
