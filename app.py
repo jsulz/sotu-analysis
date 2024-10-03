@@ -191,7 +191,6 @@ with gr.Blocks() as demo:
     df, written, spoken = load_transform_dataset()
     # store the dataframe in a state object before passing to component functions
     df_state = gr.State(df)
-
     # Build out the top level static charts and content
     gr.Markdown(
         """
@@ -201,130 +200,138 @@ with gr.Blocks() as demo:
     )
 
     gr.Markdown(
-        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president."
+        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. To get a summary, go to the 'Summarize a Speech' tab."
     )
-    gr.Markdown("## Summarize a Speech")
-    gr.HTML("<div id=summarize-anchor></div>")
-    gr.Markdown(
-        """
-        Context is king, so before we start looking at the speeches in the aggregate, get a summary of a State of the Union first. Use the dropdown to select a speech from a president and click the button to summarize the speech. [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) will provide a concise summary of the speech with the proper historical and political context.
-        """
-    )
-    speeches = df["speech_key"].unique()
-    speeches = speeches.tolist()
-    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
-    # create a dropdown to select a speech from a president
-    run_summarization = gr.Button(value="Summarize")
-    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
-    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
 
-    # Basic line chart showing the total number of words in each address
-    gr.Markdown(
-        """
-                ## The shape of words
-                The line chart to the right shows the total number of words in each address. However, not all SOTUs are created equally. From 1801 to 1916, each address was a written message to Congress. In 1913, Woodrow Wilson broke with tradition and delivered his address in person. Since then, the addresses have been a mix of written and spoken (mostly spoken). 
-
-                The spikes you see in the early 1970's and early 1980's are from written addresses by Richard Nixon and Jimmy Carter respectively.
-
-                Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
-                """
-    )
-    fig1 = px.line(
-        df,
-        x="date",
-        y="word_count",
-        title="Total Number of Words in Addresses",
-        line_shape="spline",
-    )
-    fig1.update_layout(
-        xaxis=dict(title="Date of Address"),
-        yaxis=dict(title="Word Count"),
-    )
-    gr.Plot(fig1, scale=2)
-    # group by president and category and calculate the average word count sort by date
-    avg_word_count = (
-        df.groupby(["potus", "categories"])["word_count"].mean().reset_index()
-    )
-    # Build a bar chart showing the average number of words in each address by president
-    fig2 = px.bar(
-        avg_word_count,
-        x="potus",
-        y="word_count",
-        title="Average Number of Words in Addresses by President",
-        color="categories",
-        barmode="group",
-    )
-    fig2.update_layout(
-        xaxis=dict(
-            title="President",
-            tickangle=-45,  # Rotate labels 45 degrees counterclockwise
-        ),
-        yaxis=dict(
-            title="Average Word Count",
-            tickangle=0,  # Default label angle (horizontal)
-        ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    )
-    gr.Plot(fig2)
-
-    # Create a line chart showing the Automated Readability Index in each address
-    with gr.Row():
-        ari = df[["potus", "date", "ari", "categories"]]
-        fig3 = px.line(
-            ari,
-            x="date",
-            y="ari",
-            title="Automated Readability Index in each Address",
-            line_shape="spline",
-        )
-        fig3.update_layout(
-            xaxis=dict(title="Date of Address"),
-            yaxis=dict(title="ARI Score"),
-        )
-        gr.Plot(fig3, scale=2)
+    with gr.Tab(label="Speech Data"):
+        # Basic line chart showing the total number of words in each address
         gr.Markdown(
             """
-                   The line chart to the left shows the Automated Redibility Index (ARI) for each speech by year. The ARI is calculated using the formula: 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43. In general, ARI scores correspond to U.S. grade levels. For example, an ARI of 8.0 corresponds to an 8th grade reading level.
+                    ## The shape of words
+                    The line chart to the right shows the total number of words in each address. However, not all SOTUs are created equally. From 1801 to 1916, each address was a written message to Congress. In 1913, Woodrow Wilson broke with tradition and delivered his address in person. Since then, the addresses have been a mix of written and spoken (mostly spoken). 
 
-                   While there are other scores that are more representative of attributes we might want to measure, they require values like syllables. The ARI is a simple score to compute with our data. 
+                    The spikes you see in the early 1970's and early 1980's are from written addresses by Richard Nixon and Jimmy Carter respectively.
 
-                   The drop off is quite noticeable, don't you think? ;) 
+                    Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
+                    """
+        )
+        fig1 = px.line(
+            df,
+            x="date",
+            y="word_count",
+            title="Total Number of Words in Addresses",
+            line_shape="spline",
+        )
+        fig1.update_layout(
+            xaxis=dict(title="Date of Address"),
+            yaxis=dict(title="Word Count"),
+        )
+        gr.Plot(fig1, scale=2)
+        # group by president and category and calculate the average word count sort by date
+        avg_word_count = (
+            df.groupby(["potus", "categories"])["word_count"].mean().reset_index()
+        )
+        # Build a bar chart showing the average number of words in each address by president
+        fig2 = px.bar(
+            avg_word_count,
+            x="potus",
+            y="word_count",
+            title="Average Number of Words in Addresses by President",
+            color="categories",
+            barmode="group",
+        )
+        fig2.update_layout(
+            xaxis=dict(
+                title="President",
+                tickangle=-45,  # Rotate labels 45 degrees counterclockwise
+            ),
+            yaxis=dict(
+                title="Average Word Count",
+                tickangle=0,  # Default label angle (horizontal)
+            ),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
+        )
+        gr.Plot(fig2)
+
+        # Create a line chart showing the Automated Readability Index in each address
+        with gr.Row():
+            ari = df[["potus", "date", "ari", "categories"]]
+            fig3 = px.line(
+                ari,
+                x="date",
+                y="ari",
+                title="Automated Readability Index in each Address",
+                line_shape="spline",
+            )
+            fig3.update_layout(
+                xaxis=dict(title="Date of Address"),
+                yaxis=dict(title="ARI Score"),
+            )
+            gr.Plot(fig3, scale=2)
+            gr.Markdown(
+                """
+                    The line chart to the left shows the Automated Redibility Index (ARI) for each speech by year. The ARI is calculated using the formula: 4.71 * (characters/words) + 0.5 * (words/sentences) - 21.43. In general, ARI scores correspond to U.S. grade levels. For example, an ARI of 8.0 corresponds to an 8th grade reading level.
+
+                    While there are other scores that are more representative of attributes we might want to measure, they require values like syllables. The ARI is a simple score to compute with our data. 
+
+                    The drop off is quite noticeable, don't you think? ;) 
+                """
+            )
+        gr.Markdown(
+            """
+                ## Dive Deeper on Each President
+
+                Use the dropdown to select a president a go a little deeper. 
+                
+                To begin with, there is an [n-gram](https://en.wikipedia.org/wiki/N-gram) bar chart built from all of the given president's addresses. An n-gram is a contiguous sequence of n items from a given sample of text or speech. Because written and spoken speech is littered with so-called "stop words" such as "and", "the", and "but", they've been removed to provide a more rich (albeit sometimes more difficult to read) view of the text. 
+                
+                The slider only goes up to 4-grams because the data is sparse beyond that. I personally found the n-grams from our last three presidents to be less than inspiring and full of platitudes. Earlier presidents have more interesting n-grams.
+
+                Next up is a word cloud of the lemmatized text from the president's addresses. [Lemmatization](https://en.wikipedia.org/wiki/Lemmatization) is the process of grouping together the inflected forms of a word so they can be analyzed as a single item. Think of this as a more advanced version of [stemming](https://en.wikipedia.org/wiki/Stemming) where we can establish novel links between words like "better" and "good" that might otherwise be overlooked in stemming.
+                
+                You can also see a line chart of word count and ARI for each address.
+        """
+        )
+        # get all unique president names
+        presidents = df["potus"].unique()
+        presidents = presidents.tolist()
+        presidents.append("All")
+
+        # create a dropdown to select a president
+        president = gr.Dropdown(
+            label="Select a President", choices=presidents, value="All"
+        )
+        # create a text area to display the summarized speech
+        # create a slider for number of word grams
+        grams = gr.Slider(
+            minimum=1, maximum=4, step=1, label="N-grams", interactive=True, value=1
+        )
+
+        # show a bar chart of the top n-grams for a selected president
+        gr.Plot(plotly_ngrams, inputs=[grams, president, df_state])
+
+        gr.Plot(plt_wordcloud, scale=2, inputs=[president, df_state])
+
+        # show a line chart of word count and ARI for a selected president
+        gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
+
+    with gr.Tab(label="Summarize a Speech"):
+        gr.Markdown("## Summarize a Speech")
+        gr.Markdown(
+            """
+            Context is king; get a summary of a State of the Union now that you've seen a bit more. Use the dropdown to select a speech from a president and click the button to summarize the speech. [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) will provide a concise summary of the speech with the proper historical and political context.
             """
         )
-    gr.Markdown(
-        """
-            ## Dive Deeper on Each President
-
-            Use the dropdown to select a president a go a little deeper. 
-            
-            To begin with, there is an [n-gram](https://en.wikipedia.org/wiki/N-gram) bar chart built from all of the given president's addresses. An n-gram is a contiguous sequence of n items from a given sample of text or speech. Because written and spoken speech is littered with so-called "stop words" such as "and", "the", and "but", they've been removed to provide a more rich (albeit sometimes more difficult to read) view of the text. 
-            
-            The slider only goes up to 4-grams because the data is sparse beyond that. I personally found the n-grams from our last three presidents to be less than inspiring and full of platitudes. Earlier presidents have more interesting n-grams.
-
-            Next up is a word cloud of the lemmatized text from the president's addresses. [Lemmatization](https://en.wikipedia.org/wiki/Lemmatization) is the process of grouping together the inflected forms of a word so they can be analyzed as a single item. Think of this as a more advanced version of [stemming](https://en.wikipedia.org/wiki/Stemming) where we can establish novel links between words like "better" and "good" that might otherwise be overlooked in stemming.
-            
-            You can also see a line chart of word count and ARI for each address.
-    """
-    )
-    # get all unique president names
-    presidents = df["potus"].unique()
-    presidents = presidents.tolist()
-    presidents.append("All")
-
-    # create a dropdown to select a president
-    president = gr.Dropdown(label="Select a President", choices=presidents, value="All")
-    # create a text area to display the summarized speech
-    # create a slider for number of word grams
-    grams = gr.Slider(
-        minimum=1, maximum=4, step=1, label="N-grams", interactive=True, value=1
-    )
-
-    # show a bar chart of the top n-grams for a selected president
-    gr.Plot(plotly_ngrams, inputs=[grams, president, df_state])
-
-    gr.Plot(plt_wordcloud, scale=2, inputs=[president, df_state])
-
-    # show a line chart of word count and ARI for a selected president
-    gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
+        speeches = df["speech_key"].unique()
+        speeches = speeches.tolist()
+        speech = gr.Dropdown(label="Select a Speech", choices=speeches)
+        # create a dropdown to select a speech from a president
+        run_summarization = gr.Button(value="Summarize")
+        fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
+        run_summarization.click(
+            streaming, inputs=[speech, df_state], outputs=[fin_speech]
+        )
 
 demo.launch()
