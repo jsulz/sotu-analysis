@@ -201,32 +201,46 @@ with gr.Blocks() as demo:
     )
 
     gr.Markdown(
-        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context."
+        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president."
     )
+    gr.Markdown("## Summarize a Speech")
+    gr.HTML("<div id=summarize-anchor></div>")
+    gr.Markdown(
+        """
+        Context is king, so before we start looking at the speeches in the aggregate, get a summary of a State of the Union first. Use the dropdown to select a speech from a president and click the button to summarize the speech. [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) will provide a concise summary of the speech with the proper historical and political context.
+        """
+    )
+    speeches = df["speech_key"].unique()
+    speeches = speeches.tolist()
+    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
+    # create a dropdown to select a speech from a president
+    run_summarization = gr.Button(value="Summarize")
+    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
+    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
+
     # Basic line chart showing the total number of words in each address
-    with gr.Row():
-        gr.Markdown(
-            """
-                    ## The shape of words
-                    The line chart to the right shows the total number of words in each address. However, not all SOTUs are created equally. From 1801 to 1916, each address was a written message to Congress. In 1913, Woodrow Wilson broke with tradition and delivered his address in person. Since then, the addresses have been a mix of written and spoken (mostly spoken). 
+    gr.Markdown(
+        """
+                ## The shape of words
+                The line chart to the right shows the total number of words in each address. However, not all SOTUs are created equally. From 1801 to 1916, each address was a written message to Congress. In 1913, Woodrow Wilson broke with tradition and delivered his address in person. Since then, the addresses have been a mix of written and spoken (mostly spoken). 
 
-                    The spikes you see in the early 1970's and early 1980's are from written addresses by Richard Nixon and Jimmy Carter respectively.
+                The spikes you see in the early 1970's and early 1980's are from written addresses by Richard Nixon and Jimmy Carter respectively.
 
-                    Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
-                    """
-        )
-        fig1 = px.line(
-            df,
-            x="date",
-            y="word_count",
-            title="Total Number of Words in Addresses",
-            line_shape="spline",
-        )
-        fig1.update_layout(
-            xaxis=dict(title="Date of Address"),
-            yaxis=dict(title="Word Count"),
-        )
-        gr.Plot(fig1, scale=2)
+                Now that we have a little historical context, what does this data look like if we split things out by president? The bar chart below shows the average number of words in each address by president. The bars are grouped by written and spoken addresses.
+                """
+    )
+    fig1 = px.line(
+        df,
+        x="date",
+        y="word_count",
+        title="Total Number of Words in Addresses",
+        line_shape="spline",
+    )
+    fig1.update_layout(
+        xaxis=dict(title="Date of Address"),
+        yaxis=dict(title="Word Count"),
+    )
+    gr.Plot(fig1, scale=2)
     # group by president and category and calculate the average word count sort by date
     avg_word_count = (
         df.groupby(["potus", "categories"])["word_count"].mean().reset_index()
@@ -312,20 +326,5 @@ with gr.Blocks() as demo:
 
     # show a line chart of word count and ARI for a selected president
     gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
-
-    gr.Markdown("## Summarize a Speech")
-    gr.HTML("<div id=summarize-anchor></div>")
-    gr.Markdown(
-        """
-        Use the dropdown to select a speech from a president and click the button to summarize the speech. The model will provide a concise summary of the speech with the proper historical and political context.
-        """
-    )
-    speeches = df["speech_key"].unique()
-    speeches = speeches.tolist()
-    speech = gr.Dropdown(label="Select a Speech", choices=speeches)
-    # create a dropdown to select a speech from a president
-    run_summarization = gr.Button(value="Summarize")
-    fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
-    run_summarization.click(streaming, inputs=[speech, df_state], outputs=[fin_speech])
 
 demo.launch()

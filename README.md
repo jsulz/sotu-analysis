@@ -11,6 +11,8 @@ license: mit
 short_description: A data dashboard for all U.S. State of the Unions.
 datasets:
   - jsulz/state-of-the-union-addresses
+models:
+  - Qwen/Qwen2.5-72B-Instruct
 ---
 
 # State of the Union Analysis
