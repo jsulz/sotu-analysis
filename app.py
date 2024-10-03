@@ -201,7 +201,7 @@ with gr.Blocks() as demo:
     )
 
     gr.Markdown(
-        "In addition to analyzing the content, this space also leverages the Qwen/2.5-72B-Instruct model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context."
+        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context."
     )
     # Basic line chart showing the total number of words in each address
     with gr.Row():
