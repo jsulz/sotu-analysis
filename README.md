@@ -27,3 +27,4 @@ The Space makes use of:
 - Plotly (for the charts)
 - nltk (to create an n-gram visualization)
 - datasets (for loading the dataset from Hugging Face)
+- [Quen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) model for summarization
