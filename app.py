@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+# pylint: disable=not-an-iterable
 from collections import Counter
 import math
 import os
@@ -170,15 +172,16 @@ def streaming(speech_key, _df):
         messages=[
             {
                 "role": "system",
-                "content": "You are a political scholar with a deep knowledge of State of the Union addresses. You are tasked with summarizing a speech from a given president. The speech is a mix of written and spoken addresses. The goal is to provide a concise summary of the speech with the proper historical and political context.",
+                "content": "You are a political scholar with a deep knowledge of State of the Union addresses. You are tasked with summarizing a speech from a given president. The content should be structured like you were writing a short essay. The goal is to provide a concise summary of the speech with the proper historical and political context. Where applicable, directly quote the speech.",
             },
             {
                 "role": "user",
-                "content": f"The following speech is a State of the Union address from {speech_info[0]} on {speech_info[1]}. Summarize it: {speech}",
+                "content": f"The following speech is a State of the Union address from {speech_info[0]} on {speech_info[1]}. Summarize it in 500 words: {speech}",
             },
         ],
-        max_tokens=700,
+        max_tokens=1200,
         stream=True,
+        temperature=0.5,
     ):
         # yield message.choices[0].delta.content
         # print(message)
@@ -202,6 +205,23 @@ with gr.Blocks() as demo:
     gr.Markdown(
         "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. To get a summary, go to the 'Summarize a Speech' tab."
     )
+
+    with gr.Tab(label="Summarize a Speech"):
+        gr.Markdown("## Summarize a Speech")
+        gr.Markdown(
+            """
+            Context is king; get a summary of a State of the Union now that you've seen a bit more. Use the dropdown to select a speech from a president and click the button to summarize the speech. [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) will provide a concise summary of the speech with the proper historical and political context.
+            """
+        )
+        speeches = df["speech_key"].unique()
+        speeches = speeches.tolist()
+        speech = gr.Dropdown(label="Select a Speech", choices=speeches)
+        # create a dropdown to select a speech from a president
+        run_summarization = gr.Button(value="Summarize")
+        fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
+        run_summarization.click(
+            streaming, inputs=[speech, df_state], outputs=[fin_speech]
+        )
 
     with gr.Tab(label="Speech Data"):
         # Basic line chart showing the total number of words in each address
@@ -316,22 +336,5 @@ with gr.Blocks() as demo:
 
         # show a line chart of word count and ARI for a selected president
         gr.Plot(plotly_word_and_ari, inputs=[president, df_state])
-
-    with gr.Tab(label="Summarize a Speech"):
-        gr.Markdown("## Summarize a Speech")
-        gr.Markdown(
-            """
-            Context is king; get a summary of a State of the Union now that you've seen a bit more. Use the dropdown to select a speech from a president and click the button to summarize the speech. [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) will provide a concise summary of the speech with the proper historical and political context.
-            """
-        )
-        speeches = df["speech_key"].unique()
-        speeches = speeches.tolist()
-        speech = gr.Dropdown(label="Select a Speech", choices=speeches)
-        # create a dropdown to select a speech from a president
-        run_summarization = gr.Button(value="Summarize")
-        fin_speech = gr.Textbox(label="Summarized Speech", type="text", lines=10)
-        run_summarization.click(
-            streaming, inputs=[speech, df_state], outputs=[fin_speech]
-        )
 
 demo.launch()
