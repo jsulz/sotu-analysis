@@ -140,28 +140,6 @@ def plt_wordcloud(president, _df):
     return fig6
 
 
-def summarization(speech_key, _df):
-    client = InferenceClient(model="facebook/bart-large-cnn")
-    chunk_len = 4000
-    speech = _df[_df["speech_key"] == speech_key]["speech_html"].values[0]
-    sotu_chunks = int(math.ceil(len(speech) / chunk_len))
-    response = []
-    for chunk in range(1, sotu_chunks + 1):
-        if chunk * 4000 < len(speech):
-            chunk_text = speech[(chunk - 1) * chunk_len : chunk * chunk_len]
-        else:
-            chunk_text = speech[(chunk - 1) * chunk_len :]
-        try:
-            summarization_chunk = client.summarization(
-                chunk_text, parameters={"truncation": "do_not_truncate"}
-            )
-        except Exception as e:
-            print(e)
-        response.append(summarization_chunk.summary_text)
-
-    return "\n\n".join(response)
-
-
 def streaming(speech_key, _df):
     client = InferenceClient(token=os.environ["HF_TOKEN"])
     speech = _df[_df["speech_key"] == speech_key]["speech_html"].values[0]
@@ -181,10 +159,8 @@ def streaming(speech_key, _df):
         ],
         max_tokens=1200,
         stream=True,
-        temperature=0.5,
+        temperature=0.25,
     ):
-        # yield message.choices[0].delta.content
-        # print(message)
         messages.append(message.choices[0].delta.content)
     return "".join(messages)
 
@@ -203,7 +179,7 @@ with gr.Blocks() as demo:
     )
 
     gr.Markdown(
-        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. To get a summary, go to the 'Summarize a Speech' tab."
+        "In addition to analyzing the content, this space also leverages the [Qwen/2.5-72B-Instruct](https://deepinfra.com/Qwen/Qwen2.5-72B-Instruct) model to summarize a speech. The model is tasked with providing a concise summary of a speech from a given president. Pick a speech from the dropdown and click 'Summarize' on the 'Summarize a Speech' tab."
     )
 
     with gr.Tab(label="Summarize a Speech"):
